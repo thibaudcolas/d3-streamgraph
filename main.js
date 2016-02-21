@@ -1,123 +1,70 @@
 (function (d3) {
   'use strict';
 
-  var width = 1200,
-      height = 250,
-      cellSizeInner = 17,
-      cellSize = 20;
+  var n = 20, // number of layers
+      m = 200, // number of samples per layer
+      stack = d3.layout.stack().offset("wiggle"),
+      layers0 = stack(d3.range(n).map(function() { return bumpLayer(m); })),
+      layers1 = stack(d3.range(n).map(function() { return bumpLayer(m); }));
 
-  var day = d3.time.format("%w"),
-      week = d3.time.format("%U"),
-      format = d3.time.format("%Y-%m-%d");
+  var width = 960,
+      height = 500;
 
-  var data = {};
-  var input = {
-    budgetPerDay: 0,
-    unit: '',
-    raw: {}
+  var x = d3.scale.linear()
+      .domain([0, m - 1])
+      .range([0, width]);
+
+  var y = d3.scale.linear()
+      .domain([0, d3.max(layers0.concat(layers1), function(layer) { return d3.max(layer, function(d) { return d.y0 + d.y; }); })])
+      .range([height, 0]);
+
+  var color = d3.scale.linear()
+      .range(["#aad", "#556"]);
+
+  var area = d3.svg.area()
+      .x(function(d) { return x(d.x); })
+      .y0(function(d) { return y(d.y0); })
+      .y1(function(d) { return y(d.y0 + d.y); });
+
+  var svg = d3.select("#viz").append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+  svg.selectAll("path")
+      .data(layers0)
+    .enter().append("path")
+      .attr("d", area)
+      .style("fill", function() { return color(Math.random()); });
+
+  window.transition = function() {
+    svg.selectAll("path")
+        .data(function() {
+          var d = layers1;
+          layers1 = layers0;
+          return layers0 = d;
+        })
+      .transition()
+        .duration(2500)
+        .attr("d", area);
   };
 
-  var range = [2015, 2016];
+  // Inspired by Lee Byron's test data generator.
+  function bumpLayer(n) {
 
-  var monthsScale = d3.time.scale()
-      .domain([new Date(range[0], 0, 1), new Date(range[0], 11, 31)])
-      .range([0, cellSize * 53]);
+    function bump(a) {
+      var x = 1 / (.1 + Math.random()),
+          y = 2 * Math.random() - .5,
+          z = 10 / (.1 + Math.random());
+      for (var i = 0; i < n; i++) {
+        var w = (i / n - y) * z;
+        a[i] += x * Math.exp(-w * w);
+      }
+    }
 
-  var svg = d3.select('#viz').selectAll('svg')
-      .data(d3.range(range[0], range[1]))
-    .enter().append('svg')
-      .attr('width', width)
-      .attr('height', height)
-      .attr('class', 'RdYlGn')
-    .append('g')
-      .attr('transform', 'translate(' + ((width - cellSize * 53) / 2) + ',' + 40 + ')');
-
-  svg.append('text')
-    .attr('transform', 'translate(-20,' + cellSize * 3.5 + ') rotate(-90)')
-    .style('text-anchor', 'middle')
-    .attr('class', 'label')
-    .text(function(d) { return d; });
-
-  var rect = svg.selectAll('.day')
-      .data(function(d) { return d3.time.days(new Date(d, 0, 1), new Date(d + 1, 0, 1)); })
-    .enter().append('rect')
-      .attr('class', 'day')
-      .attr('width', cellSizeInner)
-      .attr('height', cellSizeInner)
-      .attr('x', function(d) { return week(d) * cellSize; })
-      .attr('y', function(d) { return day(d) * cellSize; })
-      .datum(format);
-
-  rect.append('title')
-      .text(function(d) { return d; });
-
-  var months = svg.selectAll('.month')
-      .data(function(d) { return d3.time.months(new Date(d, 0, 1), new Date(d + 1, 0, 1)); })
-    .enter().append('path')
-      .attr('class', 'month')
-      .attr('d', function monthPath(t0) {
-        var margin1 = 1,
-            margin2 = 2,
-            margin3 = 3,
-            t1 = new Date(t0.getFullYear(), t0.getMonth() + 1, 0),
-            d0 = +day(t0),
-            w0 = +week(t0),
-            d1 = +day(t1),
-            w1 = +week(t1);
-
-        return 'M' + ((w0 + 1) * cellSize - (w0 === 0 ? margin3 : 0)) + ',' + (d0 * cellSize - (d0 === 0 ? margin2 : 0))
-          + 'H' + (w0 * cellSize - (w0 === 0 ? margin3 : 0)) + 'V' + (7 * cellSize + 0)
-          + 'H' + (w1 * cellSize - (w1 === 52 ? margin1 : 0)) + 'V' + ((d1 + 1) * cellSize - 0)
-          + 'H' + ((w1 + 1) * cellSize - (w1 === 52 ? margin1 : 0)) + 'V' + (0 - margin2)
-          + 'H' + ((w0 + 1) * cellSize - (w0 === 0 ? margin3 : 0)) + 'Z';
-      });
-
-  var xAxis = d3.svg.axis()
-    .scale(monthsScale)
-    .orient('bottom')
-    .ticks(d3.time.months)
-    .tickSize(16, 0)
-    .tickFormat(d3.time.format('%b'));
-
-  svg.append('g')
-    .attr('class', 'x axis')
-    .attr('transform', 'translate(20, -40)')
-    .call(xAxis)
-    .selectAll('.tick text')
-    .style('text-anchor', 'start');
-
-  d3.json('meal-expenses.json', function(error, json) {
-    input.raw = json;
-    input.unit = json.unit;
-    input.mealPerDay = json.mealPerDay;
-    input.singleMealBudget = json.singleMealBudget;
-    input.budgetPerDay = input.mealPerDay * input.singleMealBudget;
-
-    // Parse raw input expenses data.
-    d3.map(input.raw.expenses).forEach(function (date, amount) {
-        var start = format.parse(date);
-        console.log((amount / input.budgetPerDay));
-        // TODO Replace this by properly accounting for remainder.
-        var end = d3.time.format('%j').parse('' + (d3.time.dayOfYear(start) + 1 + (Math.floor(amount / input.budgetPerDay))));
-        end.setFullYear(start.getFullYear());
-
-        d3.time.days(start, end).forEach(function (d) {
-          d = format(d);
-          data[d] = (data[d] || 0) + input.budgetPerDay;
-        });
-      });
-
-    var color = d3.scale.quantize()
-      .domain([0, input.budgetPerDay * 4])
-      .range(d3.range(11).map(function(d) { return 'q' + d + '-11'; }));
-
-    rect.filter(function(d) { return d in data; })
-        .attr('class', function(d) {
-          var isToday = d === format((new Date()));
-          return 'day ' + color(data[d]) + (isToday ? ' today' : '');
-        })
-      .select('title')
-        .text(function(d) { return d + ": " + input.unit + data[d]; });
-  });
+    var a = [], i;
+    for (i = 0; i < n; ++i) a[i] = 0;
+    for (i = 0; i < 5; ++i) bump(a);
+    return a.map(function(d, i) { return {x: i, y: Math.max(0, d)}; });
+  }
 
 })(window.d3);
