@@ -2,9 +2,11 @@
 
 const d3 = window.d3;
 
-const data = window.data;
+const rawData = window.data;
+const mount = document.querySelector('#mount');
 
-console.log(data);
+const width = mount.offsetWidth;
+const height = width / 3;
 
 // Inspired by Lee Byron's test data generator.
 function bumpLayer(n) {
@@ -25,24 +27,26 @@ function bumpLayer(n) {
     return a.map(function(d, i) { return {x: i, y: Math.max(0, d)}; });
 }
 
-
-const width = 960;
-const height = 500;
-
-// number of layers
-const n = data.length;
-// number of samples per layer
-const m = data[0].commitActivity.length;
-const stack = d3.layout.stack().offset('zero');
-// const layers = stack(d3.range(n).map(() => bumpLayer(m)));
-const layers = stack(data.map(repo => {
-    return repo.commitActivity.map((week, i) => {
+const data = rawData.map(repo => {
+    return d3.merge(repo.commitActivity.map((week, i) => {
+        return week.days.map((day, j) => {
+            return day;
+        });
+    })).map((day, i) => {
         return {
             x: i,
-            y: week.total,
+            y: day,
         };
     });
-}));
+});
+
+console.log(data);
+
+// number of samples per layer
+const m = data[0].length;
+const stack = d3.layout.stack().offset('wiggle');
+// const layers = stack(d3.range(n).map(() => bumpLayer(m)));
+const layers = stack(data);
 
 const scales = {
     x: d3.scale.linear()
@@ -64,7 +68,7 @@ const area = d3.svg.area()
     .y0(d => scales.y(d.y0))
     .y1(d => scales.y(d.y0 + d.y));
 
-const svg = d3.select('#viz').append('svg')
+const svg = d3.select(mount).append('svg')
     .attr('width', width)
     .attr('height', height);
 
