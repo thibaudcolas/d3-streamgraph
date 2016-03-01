@@ -55,8 +55,7 @@ const scales = {
         })])
         .range([height, 0]),
 
-    color: d3.scale.linear()
-        .range(['#aad', '#556']),
+    color: d3.scale.category20(),
 };
 
 const area = d3.svg.area()
