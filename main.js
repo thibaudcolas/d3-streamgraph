@@ -39,6 +39,10 @@ function bumpLayer(n) {
     return a.map(function(d, i) { return {x: i, y: Math.max(0, d)}; });
 }
 
+// silhouette - center the stream, as in ThemeRiver.
+// wiggle - minimize weighted change in slope.
+// expand - normalize layers to fill the range [0,1].
+// zero - use a zero baseline, i.e., the y-axis.
 // number of samples per layer
 const stack = d3.layout.stack().offset('silhouette');
 // const layers = stack(d3.range(n).map(() => bumpLayer(m)));
