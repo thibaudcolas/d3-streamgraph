@@ -19,33 +19,14 @@ const data = rawData.map(repo => {
     });
 });
 
-console.log(data);
-
-// Inspired by Lee Byron's test data generator.
-function bumpLayer(n) {
-
-    function bump(a) {
-        var x = 1 / (.1 + Math.random()),
-        y = 2 * Math.random() - .5,
-        z = 10 / (.1 + Math.random());
-        for (var i = 0; i < n; i++) {
-            var w = (i / n - y) * z;
-            a[i] += x * Math.exp(-w * w);
-        }
-    }
-
-    var a = [], i;
-    for (i = 0; i < n; ++i) a[i] = 0;
-    for (i = 0; i < 5; ++i) bump(a);
-    return a.map(function(d, i) { return {x: i, y: Math.max(0, d)}; });
-}
-
 // silhouette - center the stream, as in ThemeRiver.
 // wiggle - minimize weighted change in slope.
 // expand - normalize layers to fill the range [0,1].
 // zero - use a zero baseline, i.e., the y-axis.
 // number of samples per layer
-const stack = d3.layout.stack().offset('zero');
+const stack = d3.layout.stack()
+    .offset('silhouette')
+    .order('inside-out');
 // const layers = stack(d3.range(n).map(() => bumpLayer(m)));
 const layers = stack(data);
 
