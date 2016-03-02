@@ -12,7 +12,6 @@ const margin = { top: 0, bottom: 20, left: 0, right: 0 };
 const data = rawData.map(repo => {
     return repo.commitActivity.map((week, i) => {
         return {
-            x: i + 1,
             t: new Date(week.week * 1000),
             y: week.total,
         };
