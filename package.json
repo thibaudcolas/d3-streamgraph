@@ -3,15 +3,15 @@
   "version": "0.1.0",
   "main": "main.js",
   "description": "A streamgraph visualization built with D3",
-  "author": "Thibaud Colas <thib@thib.me> (https://github.com/ThibWeb)",
+  "author": "Thibaud Colas <thib@thib.me> (https://github.com/thibaudcolas)",
   "license": "MIT",
-  "homepage": "https://github.com/ThibWeb/d3-streamgraph#readme",
+  "homepage": "https://github.com/thibaudcolas/d3-streamgraph#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ThibWeb/d3-streamgraph.git"
+    "url": "git+https://github.com/thibaudcolas/d3-streamgraph.git"
   },
   "bugs": {
-    "url": "https://github.com/ThibWeb/d3-streamgraph/issues"
+    "url": "https://github.com/thibaudcolas/d3-streamgraph/issues"
   },
   "keywords": [
     "d3",
